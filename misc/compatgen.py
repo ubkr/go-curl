@@ -70,9 +70,9 @@ def version_symbol(ver):
     return opts, codes, infos, vers, auths
 
 
-tags = os.popen("cd {} && git tag | grep -E 'curl-7_[0-9]+_[0-9]+$'".format(CURL_GIT_PATH)).read().split('\n')[:-1]
-tags = filter(lambda t: int(t.split('-')[1].split('_')[1]) >= 10, tags)
-versions = sorted(tags, key=lambda o: map(int, o.split('-')[1].split('_')), reverse=True)
+tags = os.popen("cd {} && git tag | grep -E '^curl-[7,8]_[0-9]+_[0-9]+$'".format(CURL_GIT_PATH)).read().split('\n')[:-1]
+filtered_tags = filter(lambda t: ((int(t.split('-')[1].split('_')[0]) == 7) and (int(t.split('-')[1].split('_')[1]) >= 10)) or (int(t.split('-')[1].split('_')[0]) == 8), tags)
+versions = sorted(filtered_tags, key=lambda o: (int(o.split('-')[1].split('_')[0]) * 10000 + int(o.split('-')[1].split('_')[1]) * 100 + int(o.split('-')[1].split('_')[2])), reverse=True)
 last = version_symbol("master")
 
 template = """
@@ -86,6 +86,8 @@ result = [template]
 result_tail = ["/* generated ends */\n"]
 if __name__ == '__main__':
     for ver in versions:
+        print("the version is {}".format(ver))
+        major = int(ver.split("_")[0].split('-')[1])
         minor, patch = map(int, ver.split("_")[-2:])
 
         opts, codes, infos, vers, auths = curr = version_symbol(ver)
@@ -107,10 +109,10 @@ if __name__ == '__main__':
                 result.append('#define {} 0'.format(a))  # 0 for nil
 
         result.append(
-            "#if (LIBCURL_VERSION_MINOR == {} && LIBCURL_VERSION_PATCH < {}) || LIBCURL_VERSION_MINOR < {} ".format(
-                minor, patch, minor))
+            "#if (LIBCURL_VERSION_MAJOR == {} && LIBCURL_VERSION_MINOR == {} && LIBCURL_VERSION_PATCH < {}) || (LIBCURL_VERSION_MAJOR == {} && LIBCURL_VERSION_MINOR < {}) ".format(
+                major, minor, patch, major, minor))
 
-        result_tail.insert(0, "#endif /* 7.{}.{} */".format(minor, patch))
+        result_tail.insert(0, "#endif /* {}.{}.{} */".format(major, minor, patch))
 
         last = curr
 
