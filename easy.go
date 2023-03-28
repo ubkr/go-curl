@@ -66,8 +66,8 @@ import (
 	"fmt"
 	"mime"
 	"path"
-	"unsafe"
 	"sync"
+	"unsafe"
 )
 
 type CurlInfo C.CURLINFO
@@ -137,7 +137,7 @@ func (c *contextMap) Delete(k uintptr) {
 	delete(c.items, k)
 }
 
-var context_map = &contextMap {
+var context_map = &contextMap{
 	items: make(map[uintptr]*CURL),
 }
 
@@ -199,7 +199,7 @@ func (curl *CURL) Setopt(opt int, param interface{}) error {
 			return err
 		}
 
-	case opt == OPT_PROGRESSFUNCTION:
+	case opt == OPT_XFERINFOFUNCTION:
 		fun := param.(func(float64, float64, float64, float64, interface{}) bool)
 		curl.progressFunction = &fun
 
@@ -233,7 +233,7 @@ func (curl *CURL) Setopt(opt int, param interface{}) error {
 		}
 
 	// for OPT_HTTPPOST, use struct Form
-	case opt == OPT_HTTPPOST:
+	case opt == OPT_MIMEPOST:
 		post := param.(*Form)
 		ptr := post.head
 		return newCurlError(C.curl_easy_setopt_pointer(p, C.CURLoption(opt), unsafe.Pointer(ptr)))
